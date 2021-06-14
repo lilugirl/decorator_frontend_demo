@@ -4,19 +4,13 @@ function init(){
   arrComponent.forEach(comp=>{
      document.querySelectorAll(comp.selector).forEach(node=>{
          let inst=new comp.class();
-         console.log('inst',inst);
          node.innerHTML=comp.template(inst);
-         console.log('inst events',inst._events);
          Object.keys(inst._events).forEach(type=>{
              node.addEventListener(type,function(e){
-                 console.log('e.target',e.target);
                  inst._events[type].forEach(item=>{
                      if(e.target.matches(item.selector)){
-                         console.log('matches');
                         let rerender= item.fn.call(inst,e);
                         if(rerender)  node.innerHTML=comp.template(inst);
-                     }else{
-                         console.log('not match')
                      }
                  })
              })
@@ -30,18 +24,12 @@ const arrComponent=[];
 function Component(config){
     config.template=_.template(config.template);
     return (target)=>{
-        console.log('component target',target);
         config.class=target;
-        arrComponent.push(config);
-        console.log('arrComponent',arrComponent);
-       
+        arrComponent.push(config);    
     }
 }
 function event(type,selector){
     return (target,key,descriptor)=>{
-      console.log('event target',target);
-      console.log('event key',key);
-      console.log('event descriptor',descriptor);
       if(!target._events) target._events={};
       if(!target._events[type]) target._events[type]=[];
 
@@ -57,6 +45,9 @@ function event(type,selector){
     selector:'my-app',
     template:`
       <h1>Todo List </h1>
+      <p><button id="buttonA">获取A</button></p>
+      <p><button id="buttonB">获取B</button></p>
+      <p><button id="buttonC">增加删除权限</button></p>
       <p><input /></p>
       <ul>
         <% todos.forEach(todo=>{ %>
@@ -86,6 +77,59 @@ class TodoListComponent{
          // e.target.value='';
           return true;
       }
+    }
+    
+    @event('click','#buttonA')
+    fetchA(){
+        Service.fetchA().then(res=>{
+            alert(res)
+        });
+    }
+
+    @event('click','#buttonB')
+    fetchB(){
+       alert(new Service().fetchB());
+    }
+
+    @event('click','#buttonC')
+    addDelete(){
+        permissionList.push('delete');
+    }
+}
+
+const permissionList=['read','update'];
+
+function can(permission){
+    return (target,key,descriptor)=>{
+        console.log('can target',target.name);
+        const origFn=descriptor.value.bind(target);
+        descriptor.value=function(...args){
+            if(permissionList.includes(permission)){
+             return  origFn(...args);
+            
+            }else{
+               return new Error('您没有操作权限');            
+            }
+        }
+       
+        return descriptor;
+
+    }
+}
+
+class Service{ 
+    @can('update')
+    static fetchA(){
+        return new Promise((resolve,reject)=>{
+            setTimeout(()=>{
+                resolve('A')
+            },1000)
+        })
+    }
+
+    @can('delete')
+    fetchB(){
+        return 'B'
     }
 }
 init();
