@@ -44,6 +44,8 @@ function event(type,selector){
 }
 
 function time(target,key,descriptor){
+    // target is the class proptotype 
+    // this is the instance
     console.log('time target',target);
     console.log('time key',key);
     console.log('time descriptor',descriptor);
