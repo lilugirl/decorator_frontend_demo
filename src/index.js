@@ -3,8 +3,10 @@ import _ from 'lodash';
 function init(){
   arrComponent.forEach(comp=>{
      document.querySelectorAll(comp.selector).forEach(node=>{
+         console.log('comp.class',comp.class);
          let inst=new comp.class();
          node.innerHTML=comp.template(inst);
+         inst.doCalc();
          Object.keys(inst._events).forEach(type=>{
              node.addEventListener(type,function(e){
                  inst._events[type].forEach(item=>{
@@ -41,6 +43,23 @@ function event(type,selector){
     }
 }
 
+function time(target,key,descriptor){
+    console.log('time target',target);
+    console.log('time key',key);
+    console.log('time descriptor',descriptor);
+    console.log('time this',this);
+    const originalFn=descriptor.value;
+
+    let i=0;
+    descriptor.value=function(...args){
+        let id=i++;
+        console.time(key+i);
+        let value=originalFn.apply(this,args);
+        console.timeEnd(key+id);
+        return value;
+    }
+}
+
 @Component({
     selector:'my-app',
     template:`
@@ -58,12 +77,15 @@ function event(type,selector){
 })
 class TodoListComponent{
     todos=[];
-    constructor(){
+    constructor(service){
+        console.log('service',service)
         this.todos.push({text:'烧菜'});
         this.todos.push({text:'喂猫'});
     }
     
+   
     @event('click','li')
+    @time
     handleClick(e){
         let todo=this.todos.filter(todo=>todo.text===e.target.innerText.trim())[0]
         todo.done=!todo.done;
@@ -94,6 +116,15 @@ class TodoListComponent{
     @event('click','#buttonC')
     addDelete(){
         permissionList.push('delete');
+    }
+
+    @time
+    doCalc(){
+        console.log('docCale this',this);
+        for(let i=0;i<10000;i++){
+
+        }
+        console.log('done')
     }
 }
 
